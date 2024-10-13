@@ -11,8 +11,10 @@ type dataBase struct {
 	*gorm.DB
 }
 
-var once sync.Once
-var DB *dataBase
+var (
+	once sync.Once
+	DB   *dataBase
+)
 
 func GetDBInstance() {
 	once.Do(func() {

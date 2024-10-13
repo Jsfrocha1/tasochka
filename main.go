@@ -28,7 +28,10 @@ type Person struct {
 
 func handlReq() {
 	http.HandleFunc("/main", mainHandler)
-	http.ListenAndServe(AppUrl, nil)
+	err := http.ListenAndServe(AppUrl, nil)
+	if err != nil {
+		panic(err.Error())
+	}
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
@@ -43,8 +46,8 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		deletePerson(w, r)
 	default:
 		http.Error(
-			w, 
-			utils.ErrMessages.MethodNotAllowed, 
+			w,
+			utils.ErrMessages.MethodNotAllowed,
 			http.StatusMethodNotAllowed,
 		)
 	}
@@ -61,7 +64,11 @@ func deletePerson(w http.ResponseWriter, r *http.Request) {
 
 	err = utils.DB.Where("name = ?", personreq.Name).Delete(&Person{}).Error
 	if err != nil {
-		http.Error(w, utils.ErrMessages.InvalidData, http.StatusBadRequest)
+		http.Error(
+			w,
+			utils.ErrMessages.InvalidData,
+			http.StatusBadRequest,
+		)
 		return
 	}
 }
@@ -72,13 +79,21 @@ func patchPerson(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&personreq)
 	if err != nil {
-		http.Error(w, utils.ErrMessages.InvalidRequest, http.StatusBadRequest)
+		http.Error(
+			w,
+			utils.ErrMessages.InvalidRequest,
+			http.StatusBadRequest,
+		)
 		return
 	}
 	err = utils.DB.Model(&person).Where("name = ?", personreq.Name).
 		Updates(Person{Name: personreq.NewName, Age: personreq.NewAge}).Error
 	if err != nil {
-		http.Error(w, utils.ErrMessages.InvalidData, http.StatusBadRequest)
+		http.Error(
+			w,
+			utils.ErrMessages.InvalidData,
+			http.StatusBadRequest,
+		)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -89,11 +104,19 @@ func postPerson(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&person)
 	if err != nil {
-		http.Error(w, utils.ErrMessages.InvalidRequest, http.StatusBadRequest)
+		http.Error(
+			w,
+			utils.ErrMessages.InvalidRequest,
+			http.StatusBadRequest,
+		)
 		return
 	}
 	if person.Name == "" || person.Age == 0 {
-		http.Error(w, utils.ErrMessages.MissingFields, http.StatusBadRequest)
+		http.Error(
+			w,
+			utils.ErrMessages.MissingFields,
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -120,7 +143,14 @@ func postPerson(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	json.NewEncoder(w).Encode(person)
+	err = json.NewEncoder(w).Encode(person)
+	if err != nil {
+		http.Error(
+			w,
+			utils.ErrMessages.InvalidData,
+			http.StatusBadRequest,
+		)
+	}
 }
 
 func getPerson(w http.ResponseWriter, r *http.Request) {
@@ -141,29 +171,54 @@ func getPerson(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		json.NewEncoder(w).Encode(persons)
+		err = json.NewEncoder(w).Encode(persons)
+		if err != nil {
+			http.Error(
+				w,
+				utils.ErrMessages.InvalidData,
+				http.StatusBadRequest,
+			)
+		}
 
 		return
 	}
 
 	_, err := fmt.Sscanf(url, "/main?id=%d", &id)
 	if err != nil {
-		http.Error(w, utils.ErrMessages.InvalidIDFormat, http.StatusBadRequest)
+		http.Error(
+			w,
+			utils.ErrMessages.InvalidIDFormat,
+			http.StatusBadRequest,
+		)
 		return
 	}
 	err = utils.DB.First(&person, id).Error
 	if err != nil {
-		http.Error(w, utils.ErrMessages.RecordNotFound, http.StatusNotFound)
+		http.Error(
+			w,
+			utils.ErrMessages.RecordNotFound,
+			http.StatusNotFound,
+		)
 		return
 	}
 
-	json.NewEncoder(w).Encode(person)
+	err = json.NewEncoder(w).Encode(person)
+	if err != nil {
+		http.Error(
+			w,
+			utils.ErrMessages.InvalidData,
+			http.StatusBadRequest,
+		)
+	}
 }
 
 func main() {
 	utils.GetDBInstance()
 
-	utils.DB.AutoMigrate(&Person{})
+	err := utils.DB.AutoMigrate(&Person{})
+	if err != nil {
+		panic(err.Error())
+	}
 
 	handlReq()
 }
