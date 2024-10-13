@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
 	"tasochka/utils"
 
 	"gorm.io/gorm"
 )
-var AppUrl = "127.0.0.1:3333"
 
+var AppUrl = "127.0.0.1:3333"
 
 type PersonReq struct {
 	Name    string `json:"name"`
@@ -41,7 +42,11 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		deletePerson(w, r)
 	default:
-		http.Error(w, utils.ErrMessages.MethodNotAllowed, http.StatusMethodNotAllowed)
+		http.Error(
+			w, 
+			utils.ErrMessages.MethodNotAllowed, 
+			http.StatusMethodNotAllowed,
+		)
 	}
 }
 
@@ -96,12 +101,20 @@ func postPerson(w http.ResponseWriter, r *http.Request) {
 		Where("age = ?", person.Age).Find(&person).RowsAffected
 
 	if res != 0 {
-		http.Error(w, utils.ErrMessages.FailedToCreatePerson, http.StatusInternalServerError)
+		http.Error(
+			w,
+			utils.ErrMessages.FailedToCreatePerson,
+			http.StatusInternalServerError,
+		)
 		return
 	}
 	result := utils.DB.Create(&person)
 	if result.Error != nil {
-		http.Error(w, utils.ErrMessages.FailedToCreatePerson, http.StatusInternalServerError)
+		http.Error(
+			w,
+			utils.ErrMessages.FailedToCreatePerson,
+			http.StatusInternalServerError,
+		)
 		return
 	}
 
@@ -120,10 +133,16 @@ func getPerson(w http.ResponseWriter, r *http.Request) {
 	if url == "/main" {
 		err := utils.DB.Find(&persons).Error
 		if err != nil {
-			http.Error(w, utils.ErrMessages.FailedToRetrieveRecords, http.StatusInternalServerError)
+			http.Error(
+				w,
+				utils.ErrMessages.FailedToRetrieveRecords,
+				http.StatusInternalServerError,
+			)
 			return
 		}
+
 		json.NewEncoder(w).Encode(persons)
+
 		return
 	}
 
